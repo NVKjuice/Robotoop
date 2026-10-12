@@ -1,4 +1,4 @@
-package log;
+package main.java.log;
 
 public enum LogLevel
 {
