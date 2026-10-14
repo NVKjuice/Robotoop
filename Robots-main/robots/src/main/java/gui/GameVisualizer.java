@@ -69,6 +69,21 @@ public class GameVisualizer extends JPanel
         m_targetPositionY = p.y;
     }
     
+    double getRobotPositionX()
+    {
+        return m_robotPositionX;
+    }
+
+    double getRobotPositionY()
+    {
+        return m_robotPositionY;
+    }
+
+    double getRobotDirection()
+    {
+        return m_robotDirection;
+    }
+    
     protected void onRedrawEvent()
     {
         EventQueue.invokeLater(this::repaint);

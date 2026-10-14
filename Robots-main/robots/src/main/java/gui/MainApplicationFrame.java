@@ -1,4 +1,4 @@
-package main.java.gui;
+package gui;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -14,7 +14,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import main.java.log.Logger;
+import log.Logger;
 
 /**
  * Что требуется сделать:
