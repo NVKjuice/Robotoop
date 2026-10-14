@@ -30,8 +30,8 @@ public class GameVisualizer extends JPanel
     private volatile int m_targetPositionX = 150;
     private volatile int m_targetPositionY = 100;
     
-    private static final double maxVelocity = 0.1; 
-    private static final double maxAngularVelocity = 0.001; 
+    private static final double maxVelocity = 0.05; 
+    private static final double maxAngularVelocity = 0.005; 
     
     public GameVisualizer() 
     {
@@ -97,18 +97,27 @@ public class GameVisualizer extends JPanel
         {
             return;
         }
-        double velocity = maxVelocity;
-        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
-        double angularVelocity = 0;
-        if (angleToTarget > m_robotDirection)
-        {
-            angularVelocity = maxAngularVelocity;
-        }
-        if (angleToTarget < m_robotDirection)
-        {
-            angularVelocity = -maxAngularVelocity;
-        }
         
+        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
+        
+        double angleDiff = angleToTarget - m_robotDirection;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+
+        double velocity;
+        double angularVelocity;
+
+        if (Math.abs(angleDiff) > 0.5)
+        {
+            velocity = 0;
+            angularVelocity = Math.signum(angleDiff) * maxAngularVelocity;
+        }
+        else
+        {
+            velocity = maxVelocity;
+            angularVelocity = applyLimits(angleDiff * 0.5, -maxAngularVelocity, maxAngularVelocity);
+        }
+
         moveRobot(velocity, angularVelocity, 10);
     }
     
@@ -139,6 +148,12 @@ public class GameVisualizer extends JPanel
         {
             newY = m_robotPositionY + velocity * duration * Math.sin(m_robotDirection);
         }
+        int panelWidth = getWidth() > 0 ? getWidth() : 800;
+        int panelHeight = getHeight() > 0 ? getHeight() : 600;
+        
+        newX = applyLimits(newX, 15, panelWidth - 15);
+        newY = applyLimits(newY, 15, panelHeight - 15);
+
         m_robotPositionX = newX;
         m_robotPositionY = newY;
         double newDirection = asNormalizedRadians(m_robotDirection + angularVelocity * duration); 
