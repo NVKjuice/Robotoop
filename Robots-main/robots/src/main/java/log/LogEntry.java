@@ -1,4 +1,4 @@
-package main.java.log;
+package log;
 
 public class LogEntry
 {

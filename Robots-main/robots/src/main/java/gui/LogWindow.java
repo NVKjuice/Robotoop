@@ -1,4 +1,4 @@
-package main.java.gui;
+package gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -7,9 +7,9 @@ import java.awt.TextArea;
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 
-import main.java.log.LogChangeListener;
-import main.java.log.LogEntry;
-import main.java.log.LogWindowSource;
+import log.LogChangeListener;
+import log.LogEntry;
+import log.LogWindowSource;
 
 public class LogWindow extends JInternalFrame implements LogChangeListener
 {

@@ -1,4 +1,4 @@
-package main.java.log;
+package log;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
