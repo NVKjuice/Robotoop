@@ -5,7 +5,7 @@ import java.util.ResourceBundle;
 
 public final class I18n {
 
-    private static final String BUNDLE_NAME = "i18n.Messages";
+    private static final String BUNDLE_NAME = "I18n.Messages";
 
     private static Locale currentLocale = getSystemLocale();
     private static ResourceBundle bundle =
