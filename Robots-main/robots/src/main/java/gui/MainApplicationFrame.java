@@ -49,7 +49,16 @@ public class MainApplicationFrame extends JFrame
         addWindow(gameWindow);
 
         setJMenuBar(generateMenuBar());
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                if (ConfirmExitDialog.show(MainApplicationFrame.this)) {
+                    System.exit(0);
+                }
+            }
+        });
     }
     
     protected LogWindow createLogWindow()
@@ -105,8 +114,20 @@ public class MainApplicationFrame extends JFrame
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
         menuBar.add(createLanguageMenu());
+        menuBar.add(createExitMenuItem());
 
         return menuBar;
+    }
+
+    private JMenuItem createExitMenuItem() {
+        JMenuItem exitButton = new JMenuItem(I18n.get("menu.exit"));
+        exitButton.setMnemonic(KeyEvent.VK_X);
+        exitButton.addActionListener((event) -> {
+            if (ConfirmExitDialog.show(this)) {
+                System.exit(0);
+            }
+        });
+        return exitButton;
     }
 
     private JMenu createLookAndFeelMenu()
