@@ -3,6 +3,7 @@ package gui;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
+import java.util.Locale;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
@@ -25,6 +26,8 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
+    private LogWindow logWindow;   
+    private GameWindow gameWindow;
     
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
@@ -38,10 +41,10 @@ public class MainApplicationFrame extends JFrame
         setContentPane(desktopPane);
         
         
-        LogWindow logWindow = createLogWindow();
+        logWindow = createLogWindow();
         addWindow(logWindow);
 
-        GameWindow gameWindow = new GameWindow();
+        gameWindow = new GameWindow();
         gameWindow.setSize(400,  400);
         addWindow(gameWindow);
 
@@ -56,7 +59,7 @@ public class MainApplicationFrame extends JFrame
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug("Протокол работает");
+        Logger.debug(I18n.get("log.works"));
         return logWindow;
     }
     
@@ -101,18 +104,19 @@ public class MainApplicationFrame extends JFrame
 
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
+        menuBar.add(createLanguageMenu());
 
         return menuBar;
     }
 
     private JMenu createLookAndFeelMenu()
     {
-        JMenu menu = new JMenu("Режим отображения");
+        JMenu menu = new JMenu(I18n.get("menu.view"));
         menu.setMnemonic(KeyEvent.VK_V);
-        menu.getAccessibleContext().setAccessibleDescription(
-            "Управление режимом отображения приложения");
+        menu.getAccessibleContext().setAccessibleDescription(I18n.get(
+            "menu.view.desc"));
 
-        JMenuItem systemItem = new JMenuItem("Системная схема", KeyEvent.VK_S);
+        JMenuItem systemItem = new JMenuItem(I18n.get("menu.view.system"), KeyEvent.VK_S);
         systemItem.addActionListener((event) -> {
             setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             this.invalidate();
@@ -120,7 +124,7 @@ public class MainApplicationFrame extends JFrame
         menu.add(systemItem);
 
         JMenuItem crossplatformItem =
-            new JMenuItem("Универсальная схема", KeyEvent.VK_S);
+            new JMenuItem(I18n.get("menu.view.crossplatform"), KeyEvent.VK_S);
         crossplatformItem.addActionListener((event) -> {
             setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             this.invalidate();
@@ -132,22 +136,55 @@ public class MainApplicationFrame extends JFrame
 
     private JMenu createTestMenu()
     {
-        JMenu menu = new JMenu("Тесты");
+        JMenu menu = new JMenu(I18n.get("menu.tests"));
         menu.setMnemonic(KeyEvent.VK_T);
-        menu.getAccessibleContext().setAccessibleDescription(
-            "Тестовые команды");
+        menu.getAccessibleContext().setAccessibleDescription(I18n.get(
+            "menu.tests.desc"));
 
         JMenuItem addLogMessageItem =
-            new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
+            new JMenuItem(I18n.get("menu.tests.log"), KeyEvent.VK_S);
         addLogMessageItem.addActionListener((event) -> {
-            Logger.debug("Новая строка");
+            Logger.debug(I18n.get("log.new.line"));
         });
         menu.add(addLogMessageItem);
 
         return menu;
     }
 
-    
+    private JMenu createLanguageMenu() {
+        JMenu menu = new JMenu(I18n.get("menu.language"));
+        menu.setMnemonic(KeyEvent.VK_L);
+
+        JMenuItem ruItem = new JMenuItem(I18n.get("menu.language.ru"));
+        ruItem.addActionListener(e -> changeLanguage(new Locale("ru")));
+        menu.add(ruItem);
+
+        JMenuItem enItem = new JMenuItem(I18n.get("menu.language.en"));
+        enItem.addActionListener(e -> changeLanguage(Locale.ENGLISH));
+        menu.add(enItem);
+
+        return menu;
+    }
+
+    private void changeLanguage(Locale locale) 
+    {
+        I18n.setLocale(locale);
+        setJMenuBar(generateMenuBar());
+
+        if (logWindow != null) 
+        {
+            logWindow.setTitle(I18n.get("window.log.title"));
+        }
+        if (gameWindow != null) 
+            {
+            gameWindow.setTitle(I18n.get("window.game.title"));
+        }
+
+        SwingUtilities.updateComponentTreeUI(this);
+        revalidate();
+        repaint();
+    }
+
     private void setLookAndFeel(String className)
     {
         try
