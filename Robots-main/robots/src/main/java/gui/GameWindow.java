@@ -17,14 +17,6 @@ public class GameWindow extends JInternalFrame
         getContentPane().add(panel);
         pack();
 
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
-            @Override
-            public void internalFrameClosing(javax.swing.event.InternalFrameEvent e) {
-                if (ConfirmExitDialog.show(GameWindow.this)) {
-                    dispose();
-                }
-            }
-        });
+        WindowUtils.addCloseConfirmation(this);
     }
 }

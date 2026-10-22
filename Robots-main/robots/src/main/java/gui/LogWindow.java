@@ -30,15 +30,7 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         pack();
         updateLogContent();
 
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
-            @Override
-            public void internalFrameClosing(javax.swing.event.InternalFrameEvent e) {
-                if (ConfirmExitDialog.show(LogWindow.this)) {
-                    dispose();
-                }
-            }
-        });
+       WindowUtils.addCloseConfirmation(this);
     }
 
     private void updateLogContent()
