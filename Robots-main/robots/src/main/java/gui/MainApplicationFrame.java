@@ -1,7 +1,9 @@
 package gui;
 
+import java.awt.event.ActionListener;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.RenderingHints.Key;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
 
@@ -107,6 +109,24 @@ public class MainApplicationFrame extends JFrame
 //        return menuBar;
 //    }
     
+    private JMenu createMenu(String titleKey, int mnemonic, String descriptionKey) {
+        JMenu menu = new JMenu(I18n.get(titleKey));
+        menu.setMnemonic(mnemonic);
+        if(descriptionKey != null) {
+            menu.getAccessibleContext().setAccessibleDescription(I18n.get(descriptionKey));
+        }
+
+        return menu;
+    }
+
+    private JMenuItem createMenuItem(String titleKey, int mnemonic, ActionListener action) {
+        JMenuItem item = new JMenuItem(I18n.get(titleKey));
+        item.setMnemonic(mnemonic);
+        item.addActionListener(action);
+
+        return item;
+    }
+
     private JMenuBar generateMenuBar()
     {
         JMenuBar menuBar = new JMenuBar();
@@ -120,90 +140,72 @@ public class MainApplicationFrame extends JFrame
     }
 
     private JMenuItem createExitMenuItem() {
-        JMenuItem exitButton = new JMenuItem(I18n.get("menu.exit"));
-        exitButton.setMnemonic(KeyEvent.VK_X);
-        exitButton.addActionListener((event) -> {
-            if (ConfirmExitDialog.show(this)) {
-                System.exit(0);
-            }
-        });
-        return exitButton;
+        
+        return createMenuItem("menu.exit", KeyEvent.VK_X,
+            event -> { if(ConfirmExitDialog.show(this)) System.exit(0); }
+        );
     }
 
     private JMenu createLookAndFeelMenu()
     {
-        JMenu menu = new JMenu(I18n.get("menu.view"));
-        menu.setMnemonic(KeyEvent.VK_V);
-        menu.getAccessibleContext().setAccessibleDescription(I18n.get(
-            "menu.view.desc"));
-
+        JMenu menu = createMenu("menu.view", KeyEvent.VK_V, "menu.view.desc");
         JMenuItem systemItem = new JMenuItem(I18n.get("menu.view.system"), KeyEvent.VK_S);
-        systemItem.addActionListener((event) -> {
-            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            this.invalidate();
-        });
-        menu.add(systemItem);
-
-        JMenuItem crossplatformItem =
-            new JMenuItem(I18n.get("menu.view.crossplatform"), KeyEvent.VK_S);
-        crossplatformItem.addActionListener((event) -> {
-            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            this.invalidate();
-        });
-        menu.add(crossplatformItem);
+        menu.add(createMenuItem("menu.view.desc", KeyEvent.VK_S,
+            event -> setLookAndFeel(
+                UIManager.getSystemLookAndFeelClassName()
+            )
+        ));
+        menu.add(createMenuItem("menu.view.crossplatform", KeyEvent.VK_C,
+            event -> setLookAndFeel(
+                UIManager.getCrossPlatformLookAndFeelClassName()
+            )
+        ));
 
         return menu;
     }
 
     private JMenu createTestMenu()
     {
-        JMenu menu = new JMenu(I18n.get("menu.tests"));
-        menu.setMnemonic(KeyEvent.VK_T);
-        menu.getAccessibleContext().setAccessibleDescription(I18n.get(
-            "menu.tests.desc"));
-
-        JMenuItem addLogMessageItem =
-            new JMenuItem(I18n.get("menu.tests.log"), KeyEvent.VK_S);
-        addLogMessageItem.addActionListener((event) -> {
-            Logger.debug(I18n.get("log.new.line"));
-        });
-        menu.add(addLogMessageItem);
+        JMenu menu = createMenu("menu.tests", KeyEvent.VK_T, "menu.tests.desc");
+        menu.add(createMenuItem("menu.tests.log", KeyEvent.VK_S,
+            event -> Logger.debug(
+                I18n.get("log.new.line")
+            )
+        ));
 
         return menu;
     }
 
     private JMenu createLanguageMenu() {
-        JMenu menu = new JMenu(I18n.get("menu.language"));
-        menu.setMnemonic(KeyEvent.VK_L);
-
-        JMenuItem ruItem = new JMenuItem(I18n.get("menu.language.ru"));
-        ruItem.addActionListener(e -> changeLanguage(new Locale("ru")));
-        menu.add(ruItem);
-
-        JMenuItem enItem = new JMenuItem(I18n.get("menu.language.en"));
-        enItem.addActionListener(e -> changeLanguage(Locale.ENGLISH));
-        menu.add(enItem);
+        JMenu menu = createMenu("menu.language", KeyEvent.VK_L, null);
+        menu.add(createMenuItem("menu.language.ru", KeyEvent.VK_R, event -> changeLanguage(new Locale("ru"))));
+        menu.add(createMenuItem("menu.language.en", KeyEvent.VK_E, event -> changeLanguage(Locale.ENGLISH)));
 
         return menu;
     }
 
-    private void changeLanguage(Locale locale) 
-    {
+    private void changeLanguage(Locale locale) {
         I18n.setLocale(locale);
-        setJMenuBar(generateMenuBar());
 
-        if (logWindow != null) 
-        {
-            logWindow.setTitle(I18n.get("window.log.title"));
-        }
-        if (gameWindow != null) 
-            {
-            gameWindow.setTitle(I18n.get("window.game.title"));
-        }
+        updateMenuBar();
+        updateWindowTitles();
 
-        SwingUtilities.updateComponentTreeUI(this);
         revalidate();
         repaint();
+    }
+
+    private void updateMenuBar() {
+        setJMenuBar(generateMenuBar());
+    }
+
+    private void updateWindowTitles() {
+        if (logWindow != null) {
+            logWindow.setTitle(I18n.get("window.log.title"));
+        }
+
+        if (gameWindow != null) {
+            gameWindow.setTitle(I18n.get("window.game.title"));
+        }
     }
 
     private void setLookAndFeel(String className)
