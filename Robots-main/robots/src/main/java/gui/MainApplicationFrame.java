@@ -52,15 +52,7 @@ public class MainApplicationFrame extends JFrame
 
         setJMenuBar(generateMenuBar());
 
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent e) {
-                if (ConfirmExitDialog.show(MainApplicationFrame.this)) {
-                    System.exit(0);
-                }
-            }
-        });
+        WindowUtils.addMainWindowCloseConfirmation(this);
     }
     
     protected LogWindow createLogWindow()
@@ -138,7 +130,7 @@ public class MainApplicationFrame extends JFrame
 
         return menuBar;
     }
-
+    // пункт меню
     private JMenuItem createExitMenuItem() {
         
         return createMenuItem("menu.exit", KeyEvent.VK_X,
