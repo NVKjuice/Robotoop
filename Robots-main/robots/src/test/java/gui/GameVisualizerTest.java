@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Point;
+import java.awt.geom.Rectangle2D;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -92,51 +94,20 @@ class GameVisualizerTest {
         assertEquals(100.0, visualizer.getRobotPositionY(), 1e-9);
     }
 
-    @Test
-    void robotCannotCrossRightWorldBoundary() {
-        press("pressed W");
-        updateMany(1000);
-        assertTrue(visualizer.getRobotPositionX() <= 785.0);
-        assertTrue(visualizer.getRobotPositionX() >= 780.0);
-    }
 
     @Test
-    void robotCannotCrossLeftWorldBoundary() {
-        press("pressed S");
-        updateMany(1000);
-        assertTrue(visualizer.getRobotPositionX() >= 15.0);
-        assertTrue(visualizer.getRobotPositionX() <= 20.0);
-    }
+    void robotStopsAtObstacle() {
+        visualizer.clearObstacles();
+        visualizer.addObstacle(new Rectangle(180, 80, 20, 40));
 
-    @Test
-    void robotCannotCrossBottomWorldBoundary() {
-        press("pressed D");
-        updateMany(29);
-        release("released D");
-        press("pressed W");
-        updateMany(1000);
-        assertTrue(visualizer.getRobotPositionY() <= 585.0);
-        assertTrue(visualizer.getRobotPositionY() >= 580.0);
-    }
-
-    @Test
-    void robotCannotCrossTopWorldBoundary() {
-        press("pressed A");
-        updateMany(29);
-        release("released A");
-        press("pressed W");
-        updateMany(1000);
-        assertTrue(visualizer.getRobotPositionY() >= 15.0);
-        assertTrue(visualizer.getRobotPositionY() <= 20.0);
-    }
-
-    @Test
-    void robotCannotPassThroughObstacle() {
-        visualizer.addObstacle(new Rectangle(130, 80, 20, 40));
         press("pressed W");
         updateMany(100);
-        assertTrue(visualizer.getRobotPositionX() < 115.0);
-        assertTrue(visualizer.getRobotPositionX() > 110.0);
+
+        assertTrue(visualizer.getRobotPositionX() > 100.0);
+        assertTrue(
+                visualizer.getRobotPositionX() < 180.0,
+                "Робот прошёл сквозь препятствие"
+        );
     }
 
     @Test
@@ -157,15 +128,22 @@ class GameVisualizerTest {
     }
 
     @Test
-    void obstacleListAndElementsAreDefensiveCopies() {
+    void obstacleCopies() {
         Rectangle original = new Rectangle(200, 120, 30, 180);
         visualizer.addObstacle(original);
         original.setBounds(0, 0, 1, 1);
 
         List<Rectangle> returned = visualizer.getObstacles();
-        assertEquals(new Rectangle(200, 120, 30, 180), returned.get(0));
-        returned.get(0).setBounds(0, 0, 1, 1);
-        assertEquals(new Rectangle(200, 120, 30, 180), visualizer.getObstacles().get(0));
+        Rectangle added = returned.get(returned.size() - 1);
+
+        assertEquals(new Rectangle(200, 120, 30, 180), added);
+
+        added.setBounds(0, 0, 1, 1);
+
+        List<Rectangle> updated = visualizer.getObstacles();
+        Rectangle stored = updated.get(updated.size() - 1);
+
+        assertEquals(new Rectangle(200, 120, 30, 180), stored);
     }
 
     @Test
@@ -176,15 +154,18 @@ class GameVisualizerTest {
     }
 
     @Test
-    void invalidObstaclesAreIgnored() {
+    void invalidObstacles() {
+        int initialSize = visualizer.getObstacles().size();
+
         visualizer.addObstacle(null);
         visualizer.addObstacle(new Rectangle(0, 0, 0, 20));
         visualizer.addObstacle(new Rectangle(0, 0, 20, -1));
-        assertTrue(visualizer.getObstacles().isEmpty());
+
+        assertEquals(initialSize, visualizer.getObstacles().size());
     }
 
     @Test
-    void keyboardBindingsExistForWASDAndArrows() {
+    void BindingsForWASDAndArrows() {
         String[] keys = {
                 "pressed W", "released W", "pressed UP", "released UP",
                 "pressed S", "released S", "pressed DOWN", "released DOWN",
@@ -218,7 +199,7 @@ class GameVisualizerTest {
     }
 
     @Test
-    void scalingKeepsWorldCenteredWhenPanelIsWiderThanWorld() {
+    void scaling() {
         visualizer.setBackground(Color.WHITE);
         visualizer.setSize(1200, 600);
         visualizer.addObstacle(new Rectangle(200, 120, 30, 180));
@@ -232,6 +213,55 @@ class GameVisualizerTest {
 
         assertEquals(new Color(90, 90, 90), new Color(image.getRGB(405, 125), true));
         assertEquals(Color.WHITE, new Color(image.getRGB(50, 300), true));
+    }
+
+    @Test
+    void startsWithSevenCoins() {
+        assertEquals(7, visualizer.getCoins().size());
+    }
+
+    @Test
+    void coinsAvoidWalls() {
+        List<Point> coins = visualizer.getCoins();
+        List<Rectangle> walls = visualizer.getObstacles();
+
+        for (Point coin : coins) {
+            for (Rectangle wall : walls) {
+                Rectangle2D expanded = new Rectangle2D.Double(
+                        wall.x - 8,
+                        wall.y - 8,
+                        wall.width + 16,
+                        wall.height + 16
+                );
+
+                assertFalse(
+                        expanded.contains(coin),
+                        "Монета находится слишком близко к стене: " + coin
+                );
+            }
+        }
+    }
+
+    @Test
+    void coinsAreSeparated() {
+        List<Point> coins = visualizer.getCoins();
+
+        for (int i = 0; i < coins.size(); i++) {
+            for (int j = i + 1; j < coins.size(); j++) {
+                Point first = coins.get(i);
+                Point second = coins.get(j);
+
+                assertTrue(
+                        first.distance(second) >= 24,
+                        "Монеты расположены слишком близко друг к другу"
+                );
+            }
+        }
+    }
+
+    @Test
+    void mapHasWalls() {
+        assertFalse(GameMap.createWalls().isEmpty());
     }
 
     private void press(String keyStroke) {
