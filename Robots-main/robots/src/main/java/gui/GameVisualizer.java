@@ -221,19 +221,6 @@ public class GameVisualizer extends JPanel {
         return copy;
     }
 
-    public synchronized void addCoin(Point coinPosition) {
-        if (coinPosition == null
-                || coinPosition.x < WALL_THICKNESS + COIN_RADIUS
-                || coinPosition.y < WALL_THICKNESS + COIN_RADIUS
-                || coinPosition.x > WORLD_WIDTH - WALL_THICKNESS - COIN_RADIUS
-                || coinPosition.y > WORLD_HEIGHT - WALL_THICKNESS - COIN_RADIUS) {
-            return;
-        }
-
-        coins.add(new Point(coinPosition));
-        repaint();
-    }
-
     public synchronized List<Point> getCoins() {
         List<Point> copy = new ArrayList<>();
 

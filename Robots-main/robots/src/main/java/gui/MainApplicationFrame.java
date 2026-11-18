@@ -6,11 +6,13 @@ import java.awt.Toolkit;
 import java.awt.RenderingHints.Key;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
+import java.util.Properties;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
+import javax.swing.JOptionPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
@@ -30,10 +32,12 @@ public class MainApplicationFrame extends JFrame
     private final JDesktopPane desktopPane = new JDesktopPane();
     private LogWindow logWindow;   
     private GameWindow gameWindow;
+    private String activeProfile;
     
-    public MainApplicationFrame() {
-        //Make the big window be indented 50 pixels from each edge
-        //of the screen.
+    public MainApplicationFrame(Properties profile, String profileName, boolean restoreProfile) {
+        
+        this.activeProfile = profileName;
+
         int inset = 50;        
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
@@ -52,9 +56,39 @@ public class MainApplicationFrame extends JFrame
 
         setJMenuBar(generateMenuBar());
 
-        WindowUtils.addMainWindowCloseConfirmation(this);
+        if (restoreProfile && profile != null) {
+            ProfileManager.restore(profile, this);
+        } else {
+            updateWindowTitles();
+        }
+
+
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override 
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                exitApplication();
+            }
+        });
+        
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
     }
     
+    public LogWindow getLogWindow() {
+        return logWindow;
+    }
+
+    public GameWindow getGameWindow() {
+        return gameWindow;
+    }
+
+    public void updateLocalization() {
+        updateMenuBar();
+        updateWindowTitles();
+
+        revalidate();
+        repaint();
+    }
+
     protected LogWindow createLogWindow()
     {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
@@ -130,12 +164,9 @@ public class MainApplicationFrame extends JFrame
 
         return menuBar;
     }
-    // пункт меню
+
     private JMenuItem createExitMenuItem() {
-        
-        return createMenuItem("menu.exit", KeyEvent.VK_X,
-            event -> { if(ConfirmExitDialog.show(this)) System.exit(0); }
-        );
+        return createMenuItem("menu.exit", KeyEvent.VK_X, event -> exitApplication());
     }
 
     private JMenu createLookAndFeelMenu()
@@ -178,12 +209,7 @@ public class MainApplicationFrame extends JFrame
 
     private void changeLanguage(Locale locale) {
         I18n.setLocale(locale);
-
-        updateMenuBar();
-        updateWindowTitles();
-
-        revalidate();
-        repaint();
+        updateLocalization();
     }
 
     private void updateMenuBar() {
@@ -197,6 +223,50 @@ public class MainApplicationFrame extends JFrame
 
         if (gameWindow != null) {
             gameWindow.setTitle(I18n.get("window.game.title"));
+        }
+    }
+
+    private void exitApplication() {
+        if (!ConfirmExitDialog.show(this)) {
+            return;
+        }
+
+        String profileName = (String) JOptionPane.showInputDialog(
+            this,
+            I18n.get("profile.save.message"),
+            I18n.get("profile.save.title"),
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            null,
+            activeProfile == null ? "default" : activeProfile
+        );
+
+        if (profileName == null) {
+            return;
+        }
+
+        profileName = profileName.trim();
+
+        if (!profileName.matches("[a-zA-Z0-9_-]+")) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    I18n.get("profile.invalid"),
+                    I18n.get("profile.save.title"),
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        try {
+            ProfileManager.save(profileName, this);
+            System.exit(0);
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    e.getMessage(),
+                    I18n.get("profile.save.title"),
+                    JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 

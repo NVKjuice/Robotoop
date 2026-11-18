@@ -6,19 +6,21 @@ import javax.swing.event.InternalFrameEvent;
 
 public class WindowUtils {
 
+    
     public static void addCloseConfirmation(JInternalFrame frame) {
-        frame.setDefaultCloseOperation(JInternalFrame.DO_NOTHING_ON_CLOSE);
 
+        frame.setDefaultCloseOperation(JInternalFrame.DO_NOTHING_ON_CLOSE);
         frame.addInternalFrameListener(new InternalFrameAdapter() {
             @Override
             public void internalFrameClosing(InternalFrameEvent e) {
+
                 if (ConfirmExitDialog.show(frame)) {
-                    frame.dispose();
+                    frame.setVisible(false);
                 }
             }
         });
     }
-    // тоже самое для главного окна
+
     public static void addMainWindowCloseConfirmation(javax.swing.JFrame frame) {
         frame.setDefaultCloseOperation(javax.swing.JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
