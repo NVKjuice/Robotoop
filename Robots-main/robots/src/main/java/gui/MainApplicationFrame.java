@@ -1,9 +1,12 @@
 package gui;
 
+import java.awt.Frame;
 import java.awt.event.ActionListener;
 import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.Toolkit;
-import java.awt.RenderingHints.Key;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
 import java.util.Properties;
@@ -33,6 +36,7 @@ public class MainApplicationFrame extends JFrame
     private LogWindow logWindow;   
     private GameWindow gameWindow;
     private String activeProfile;
+    private Rectangle normalBounds;
     
     public MainApplicationFrame(Properties profile, String profileName, boolean restoreProfile) {
         
@@ -43,6 +47,18 @@ public class MainApplicationFrame extends JFrame
         setBounds(inset, inset,
             screenSize.width  - inset*2,
             screenSize.height - inset*2);
+        normalBounds = new Rectangle(getBounds());
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent event) {
+                rememberNormalBounds();
+            }
+
+            @Override
+            public void componentResized(ComponentEvent event) {
+                rememberNormalBounds();
+            }
+        });
 
         setContentPane(desktopPane);
         
@@ -61,7 +77,7 @@ public class MainApplicationFrame extends JFrame
         } else {
             updateWindowTitles();
         }
-
+        Logger.debug(I18n.get("log.works"));
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override 
@@ -81,6 +97,26 @@ public class MainApplicationFrame extends JFrame
         return gameWindow;
     }
 
+    /** Returns the last non-maximized bounds for reliable profile persistence. */
+    public Rectangle getProfileBounds() {
+        return new Rectangle(normalBounds == null ? getBounds() : normalBounds);
+    }
+
+    public void setProfileBounds(Rectangle bounds) {
+        if (bounds == null) {
+            return;
+        }
+        normalBounds = new Rectangle(bounds);
+        setBounds(normalBounds);
+    }
+
+    private void rememberNormalBounds() {
+        if (getExtendedState() == Frame.NORMAL
+                && getWidth() > 0 && getHeight() > 0) {
+            normalBounds = new Rectangle(getBounds());
+        }
+    }
+
     public void updateLocalization() {
         updateMenuBar();
         updateWindowTitles();
@@ -96,7 +132,6 @@ public class MainApplicationFrame extends JFrame
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug(I18n.get("log.works"));
         return logWindow;
     }
     
@@ -172,7 +207,6 @@ public class MainApplicationFrame extends JFrame
     private JMenu createLookAndFeelMenu()
     {
         JMenu menu = createMenu("menu.view", KeyEvent.VK_V, "menu.view.desc");
-        JMenuItem systemItem = new JMenuItem(I18n.get("menu.view.system"), KeyEvent.VK_S);
         menu.add(createMenuItem("menu.view.desc", KeyEvent.VK_S,
             event -> setLookAndFeel(
                 UIManager.getSystemLookAndFeelClassName()

@@ -79,7 +79,7 @@ public class ProfileManager {
 
         p.setProperty("locale", I18n.getLocale().getLanguage());
 
-        Rectangle bounds = frame.getBounds();
+        Rectangle bounds = frame.getProfileBounds();
 
         p.setProperty("main.x", String.valueOf(bounds.x));
         p.setProperty("main.y", String.valueOf(bounds.y));
@@ -96,7 +96,11 @@ public class ProfileManager {
 
     private static void saveInternalWindow(Properties p, String prefix, JInternalFrame window) {
 
-        Rectangle bounds = window.getBounds();
+        Rectangle bounds = (window.isMaximum() || window.isIcon())
+                ? window.getNormalBounds() : window.getBounds();
+        if (bounds == null || bounds.width <= 0 || bounds.height <= 0) {
+            bounds = window.getBounds();
+        }
 
         p.setProperty(prefix + ".visible", String.valueOf(window.isVisible()));
         p.setProperty(prefix + ".x", String.valueOf(bounds.x));
@@ -108,15 +112,19 @@ public class ProfileManager {
     }
 
     public static void restore(Properties p, MainApplicationFrame frame) {
-        String language = p.getProperty("locale", "ru");
-        I18n.setLocale(language.equals("ru") ? new java.util.Locale("ru") : java.util.Locale.ENGLISH);
+        String language = p.getProperty("locale");
+        if (language != null) {
+            I18n.setLocale("ru".equals(language)
+                    ? new java.util.Locale("ru") : java.util.Locale.ENGLISH);
+        }
 
         int x = getInt(p, "main.x", 50);
         int y = getInt(p, "main.y", 50);
         int width = getInt(p, "main.width", 1000);
         int height = getInt(p, "main.height", 700);
 
-        frame.setBounds(x, y, width, height);
+        frame.setExtendedState(Frame.NORMAL);
+        frame.setProfileBounds(new Rectangle(x, y, Math.max(1, width), Math.max(1, height)));
 
         if (Boolean.parseBoolean(p.getProperty("main.maximized", "false"))) {
             frame.setExtendedState(Frame.MAXIMIZED_BOTH);
@@ -129,30 +137,37 @@ public class ProfileManager {
     }
 
     private static void restoreInternalWindow(Properties p, String prefix, JInternalFrame window) {
-
         int x = getInt(p, prefix + ".x", 10);
         int y = getInt(p, prefix + ".y", 10);
         int width = getInt(p, prefix + ".width", 300);
         int height = getInt(p, prefix + ".height", 400);
-
-        window.setBounds(x, y, width, height);
-
-        window.setVisible(Boolean.parseBoolean(p.getProperty(prefix + ".visible", "true")));
+        boolean maximized = Boolean.parseBoolean(p.getProperty(prefix + ".maximized", "false"));
+        boolean iconified = Boolean.parseBoolean(p.getProperty(prefix + ".icon", "false"));
+        boolean visible = Boolean.parseBoolean(p.getProperty(prefix + ".visible", "true"));
 
         try {
-            if (Boolean.parseBoolean(p.getProperty(prefix + ".maximized", "false"))) {
+            // Clear transient states before restoring the saved normal bounds.
+            if (window.isIcon()) {
+                window.setIcon(false);
+            }
+            if (window.isMaximum()) {
+                window.setMaximum(false);
+            }
+            window.setBounds(x, y, Math.max(1, width), Math.max(1, height));
+            window.setVisible(visible);
+
+            // Apply states only after normal bounds have been restored.
+            if (maximized) {
                 window.setMaximum(true);
             }
-
-            if (Boolean.parseBoolean(p.getProperty(prefix + ".icon", "false"))) {
+            if (iconified) {
                 window.setIcon(true);
             }
         } catch (java.beans.PropertyVetoException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Не удалось восстановить состояние окна: " + prefix, e);
         }
     }
 
-    
     static void saveProperties(String name, Properties properties) {
         File directory = getProfileDirectory();
 
